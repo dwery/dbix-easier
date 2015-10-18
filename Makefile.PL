@@ -1,4 +1,4 @@
-use 5.018000;
+use 5.008000;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -13,7 +13,6 @@ WriteMakefile(
 				'Class::Accessor'	=> 0,
 				'Class::Accessor::Fast'	=> 0,
 				'common::sense'		=> 0,
-				'JSON'			=> 0,
 			},			
 );
 
