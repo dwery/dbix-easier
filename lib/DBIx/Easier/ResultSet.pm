@@ -114,7 +114,7 @@ sub all
 sub first
 {
 	my ($self) = @_;
-	return $self->_inflate_row($self->rows->[0]);
+	return scalar @{$self->rows} ? $self->_inflate_row($self->rows->[0]) : undef;
 }
 
 sub columns
