@@ -6,14 +6,15 @@ use common::sense;
 
 use DBI;
 use SQL::Abstract;
+use Carp;
 
 use DBIx::Easier::ResultSet;
 
 use base qw( Class::Accessor );
 
-__PACKAGE__->mk_accessors(qw/ dbh sql debug catalog schema _pk cache_statements /);
+__PACKAGE__->mk_accessors(qw/ dbh sql debug catalog schema pk cache_statements /);
 
-our $VERSION = '1.0';
+our $VERSION = '1.1';
 
 # $DBI::err and $DBI::errstr
 
@@ -24,7 +25,7 @@ sub connect
 	$self = $self->SUPER::new
 		unless ref($self);
 
-	$self->_pk({});
+	$self->pk({});
 
 	$self->dbh(DBI->connect($opts->{'dsn'}, $opts->{'user'}, $opts->{'pass'}, $opts->{'attr'}));
   
@@ -71,11 +72,12 @@ sub resultset
 	my ($self, $table) = @_;
 
 	# fetch primary keys for table
-	unless (defined $self->_pk->{$table}) {
-		$self->_pk->{$table} = [ $self->dbh->primary_key($self->catalog, $self->schema, $table) ];
+	unless (defined $self->pk->{$table}) {
+		$self->pk->{$table} = [ $self->dbh->primary_key($self->catalog, $self->schema, $table) ];
 	}
 
-	# XXX croak for no primary key
+	croak "unable to get primary keys from DBI for " . $table
+		unless defined $self->pk->{$table};
 
 	return DBIx::Easier::ResultSet->new({
 		'dbix'		=> $self,
@@ -83,7 +85,7 @@ sub resultset
 		'schema'	=> $self->schema,
 		'table'		=> $table,
 		'sql'		=> $self->sql,
-		'primary_key'	=> $self->_pk->{$table},
+		'primary_key'	=> $self->pk->{$table},
 	});
 }
 
@@ -103,4 +105,3 @@ sub error { return (shift)->dbh->errstr; }
 sub qerror { return (shift)->dbh->errstr; }
 
 1;
-
