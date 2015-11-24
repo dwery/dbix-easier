@@ -25,10 +25,22 @@ sub connect
 	$self = $self->SUPER::new
 		unless ref($self);
 
-	$self->pk({});
+	$self->pk({})
+		unless defined $self->pk;
+
+	croak "missing dsn"
+		unless defined $opts->{'dsn'};
+
+	if ($opts->{'dsn'} =~ /^dbi:Pg/i) {
+
+		carp "please set client_encoding=utf8"
+			unless $opts->{'dsn'} =~ /client_encoding=/;
+
+		$opts->{'dsn'} .= ';fallback_application_name=' . $0;
+	}
 
 	$self->dbh(DBI->connect($opts->{'dsn'}, $opts->{'user'}, $opts->{'pass'}, $opts->{'attr'}));
-  
+
 	if (defined $self->dbh) {
 
 		$self->sql(SQL::Abstract->new(
