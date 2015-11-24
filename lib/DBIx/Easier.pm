@@ -77,7 +77,7 @@ sub resultset
 	}
 
 	croak "unable to get primary keys from DBI for " . $table
-		unless defined $self->pk->{$table};
+		unless scalar @{$self->pk->{$table}} > 0;
 
 	return DBIx::Easier::ResultSet->new({
 		'dbix'		=> $self,
