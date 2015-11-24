@@ -183,4 +183,12 @@ sub delete
 	}
 }
 
+sub DESTROY
+{
+	my ($self) = @_;
+
+	$self->sth->finish
+                if defined $self->sth;
+}
+
 1;
