@@ -7,6 +7,7 @@ use common::sense;
 use DBI;
 use SQL::Abstract;
 use Carp;
+use Config::Any;
 
 use DBIx::Easier::ResultSet;
 
@@ -52,6 +53,23 @@ sub connect
 	}
 
 	return undef;
+}
+
+sub connect_with_config
+{
+	my ($self, $file) = @_;
+
+	my $cfg = Config::Any->load_files({
+		'files' => [ $file ],
+		'use_ext' => 1,
+		'flatten_to_hash' => 1
+	});
+
+	croak "cannot load configuration from $file"
+		unless defined $cfg
+		and defined $cfg->{$file};
+
+	return $self->connect($cfg->{$file});
 }
 
 sub DESTROY

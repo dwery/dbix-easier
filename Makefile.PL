@@ -13,6 +13,7 @@ WriteMakefile(
 				'Class::Accessor'	=> 0,
 				'Class::Accessor::Fast'	=> 0,
 				'common::sense'		=> 0,
+				'Config::Any'		=> 0,
 			},			
 );
 
