@@ -15,7 +15,7 @@ use base qw( Class::Accessor );
 
 __PACKAGE__->mk_accessors(qw/ dbh sql debug catalog schema pk cache_statements /);
 
-our $VERSION = '1.1';
+our $VERSION = '1.2';
 
 # $DBI::err and $DBI::errstr
 
