@@ -32,6 +32,10 @@ sub connect
 	croak "missing dsn"
 		unless defined $opts->{'dsn'};
 
+	if (ref($opts->{'dsn'}) eq 'ARRAY') {
+		$opts->{'dsn'} = join(';', @{$opts->{'dsn'}});
+	}
+
 	if ($opts->{'dsn'} =~ /^dbi:Pg/i) {
 
 		carp "please set client_encoding=utf8"
