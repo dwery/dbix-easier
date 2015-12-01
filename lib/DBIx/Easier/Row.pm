@@ -8,7 +8,7 @@ use base qw/ Class::Accessor /;
 
 use Carp;
 
-__PACKAGE__->mk_accessors(qw/ dbix catalog schema table primary_key tuple resultset /);
+__PACKAGE__->mk_accessors(qw/ dbix table _table primary_key tuple resultset /);
 
 sub get_column
 {
@@ -26,7 +26,7 @@ sub update
         my ($self, $values) = @_;
 
 	my ($stmt, @bind) = $self->dbix->sql->update(
-			$self->table,
+			\$self->_table,
 			$values,
                         { map { $_ => $self->tuple->{$_} } @{$self->primary_key} }
 	);
@@ -38,7 +38,7 @@ sub delete
 {
         my ($self, $where) = @_;
 
-	my ($stmt, @bind) = $self->dbix->sql->delete($self->table, { map { $_ => $self->tuple->{$_} } @{$self->primary_key} } );
+	my ($stmt, @bind) = $self->dbix->sql->delete(\$self->_table, { map { $_ => $self->tuple->{$_} } @{$self->primary_key} } );
 
 	$self->dbix->execute($stmt, \@bind);
 }
@@ -56,6 +56,5 @@ sub AUTOLOAD
     
 	return undef;
 }
-
 
 1;

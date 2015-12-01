@@ -13,9 +13,10 @@ use DBIx::Easier::ResultSet;
 
 use base qw( Class::Accessor );
 
-__PACKAGE__->mk_accessors(qw/ dbh sql debug catalog schema pk cache_statements /);
+__PACKAGE__->mk_accessors(qw/ dbh sql debug cache_statements _schema /);
+__PACKAGE__->mk_ro_accessors(qw/ catalog schema /);
 
-our $VERSION = '1.2';
+our $VERSION = '2.0';
 
 # $DBI::err and $DBI::errstr
 
@@ -26,8 +27,11 @@ sub connect
 	$self = $self->SUPER::new
 		unless ref($self);
 
-	$self->pk({})
-		unless defined $self->pk;
+	$self->_schema($opts->{'definition'} || {});
+
+	# cache by default, unless overridden
+	$self->cache_statements(1)
+		unless defined $self->cache_statements;
 
 	croak "missing dsn"
 		unless defined $opts->{'dsn'};
@@ -105,23 +109,64 @@ sub resultset
 {
 	my ($self, $table) = @_;
 
-	# fetch primary keys for table
-	unless (defined $self->pk->{$table}) {
-		$self->pk->{$table} = [ $self->dbh->primary_key($self->catalog, $self->schema, $table) ];
-	}
-
-	croak "unable to get primary keys from DBI for " . $table
-		unless scalar @{$self->pk->{$table}} > 0;
-
 	return DBIx::Easier::ResultSet->new({
 		'dbix'		=> $self,
 		'catalog'	=> $self->catalog,
 		'schema'	=> $self->schema,
 		'table'		=> $table,
 		'sql'		=> $self->sql,
-		'primary_key'	=> $self->pk->{$table},
+		'_pk'		=> $self->_schema->{$self->key_for_table($self->catalog, $self->catalog, $table)},
 	});
 }
+
+sub key_for_table
+{
+	my ($self, $catalog, $schema, $table) = @_;
+
+	return join(';', $catalog, $schema, $table);
+}
+
+sub dump_schema
+{
+	my ($self, $file) = @_;
+
+	my $sth = $self->dbh->table_info($self->catalog, $self->schema, '', 'TABLE');
+
+	my $dump = {};
+
+	foreach my $table (@{$sth->fetchall_arrayref}) {
+
+		my ($catalog, $schema, $table) = @$table;
+
+		next if $schema eq 'information_schema';
+
+		my $t = $self->key_for_table($catalog, $schema, $table);
+
+		$dump->{$t} = {
+			'pk' => [ $self->dbh->primary_key($self->catalog, $self->schema, $table) ],
+		};
+	}
+
+	return $dump;
+}
+
+sub load_schema
+{
+	my ($self, $file) = @_;
+
+	my $schema = Config::Any->load_files({
+		'files' => [ $file ],
+		'use_ext' => 1,
+		'flatten_to_hash' => 1
+	});
+
+	croak "cannot load schema from $file"
+		unless defined $schema
+		and defined $schema->{$file};
+
+	$self->_schema($schema);
+}
+
 
 sub dump
 {
