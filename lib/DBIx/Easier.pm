@@ -16,7 +16,7 @@ use base qw( Class::Accessor );
 __PACKAGE__->mk_accessors(qw/ dbh sql debug cache_statements _schema /);
 __PACKAGE__->mk_ro_accessors(qw/ catalog schema /);
 
-our $VERSION = '2.0';
+our $VERSION = '2.0.1';
 
 # $DBI::err and $DBI::errstr
 
@@ -140,10 +140,13 @@ sub dump_schema
 
 		next if $schema eq 'information_schema';
 
-		my $t = $self->key_for_table($catalog, $schema, $table);
+		my $key = $self->key_for_table($catalog, $schema, $table);
+		my @pk = $self->dbh->primary_key($self->catalog, $self->schema, $table);
 
-		$dump->{$t} = {
-			'pk' => [ $self->dbh->primary_key($self->catalog, $self->schema, $table) ],
+		my $quote = $self->dbh->get_info(29);
+
+		$dump->{$key} = {
+			'pk' => [ map { $_ =~ s/$quote//g; $_ } @pk ],
 		};
 	}
 
